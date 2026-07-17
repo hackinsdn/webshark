@@ -40,6 +40,16 @@ ENV SHARKD_SOCKET=/captures/sharkd.sock
 COPY --chown=node . /usr/src/node-webshark
 COPY --from=intermediate /usr/src/web /usr/src/node-webshark/web
 
+# Wire the live-update shim (web/live-update.js, kept from the repo copy above)
+# into the freshly downloaded UI bundle: load the shim from index.html and
+# inject the two instance-capture hooks it needs into the minified bundle.
+# See web/live-update.js for details. If the patterns ever stop matching a new
+# UI build, the app still works normally, just without live updates.
+RUN cd /usr/src/node-webshark/web \
+ && sed -i -E 's/getBufferGate\(([A-Za-z0-9_$]+)\)\{/getBufferGate(\1){window.__wsLive\&\&window.__wsLive.svc(this);/' main.*.js \
+ && sed -i -E 's/initData\(\)\{var ([A-Za-z0-9_$]+)=this;/initData(){var \1=this;window.__wsLive\&\&window.__wsLive.comp(this);/' main.*.js \
+ && sed -i 's|<script src="runtime|<script src="live-update.js?v=2"></script><script src="runtime|' index.html
+
 VOLUME /captures
 
 WORKDIR /usr/src/node-webshark/api

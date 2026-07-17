@@ -78,7 +78,10 @@ get_sharkd_cli = async function(capture) {
       try {
         console.log(`Trying to spawn unix:${SHARKD_SOCKET}`)
         sharkd_proc = spawn('sharkd', ['unix:' + SHARKD_SOCKET]);
-        await sleep(250);
+        sharkd_proc.on('error', (err) => {
+          console.error('Failed to start subprocess:', err);
+        });
+        await sleep(750);
         if (sharkd_proc.exitCode === 1) {
           console.log(`Error spawning sharkd under ${SHARKD_SOCKET} / exit 1`);
           process.exit(1);
@@ -146,6 +149,12 @@ send_req = async function(request, sock) {
     }
   }
 
+  // FIXME: newer versions of sharkd does expects prev_frame to be boolean
+  // we will just ignore it since it does not seems to make much difference
+  if (request.method == "frame" && "prev_frame" in request) {
+    delete request.prev_frame;
+  }
+
   if ("capture" in request) {
     if (request.capture.includes('..')) {
       return JSON.stringify({"err": 1, "errstr": "Nope"});
@@ -173,6 +182,9 @@ send_req = async function(request, sock) {
     let new_sock = sock;
     if (typeof(new_sock) === 'undefined') {
       new_sock = await get_sharkd_cli(cap_file);
+      if (request.method === "frames") {
+        await send_req({'method':'load', 'file': cap_file}, new_sock);
+      }
     }
 
     if (new_sock === null) {
