@@ -24,6 +24,24 @@ docker run -ti --rm -p 8085:8085 -v $(pwd)/captures:/captures ghcr.io/qxip/websh
 #### Usage
 Browse to your webshark-ng instance, ie: `http://localhost:8085/webshark`
 
+#### Live capture updates
+When the opened capture file grows (e.g. a capture being written by
+`tcpdump -w` / `dumpcap`), the UI picks up the new packets automatically —
+no page reload needed, and only the new frames are fetched from sharkd
+(`frames` with `skip`). If the file is replaced or truncated, the full
+packet list is reloaded instead.
+
+How it works:
+- the API exposes `GET /webshark/watch?capture=<file>`, a Server-Sent Events
+  stream that emits `capture-changed` events when the file changes (stat
+  polling, interval configurable with the `WATCH_INTERVAL_MS` env var);
+- `web/live-update.js` subscribes to that stream and appends the new frames
+  to the packet list and packet-length chart. Since the UI in `web/` is a
+  prebuilt bundle, the shim is handed the app's internals by two tiny hooks
+  (`window.__wsLive.svc(this)` / `window.__wsLive.comp(this)`) injected into
+  the minified `main.*.js` — the Dockerfile re-applies those hooks (and the
+  `live-update.js` script tag) to the UI bundle it downloads at build time.
+
 <br>
 
 #### Credits
