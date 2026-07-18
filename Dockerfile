@@ -48,7 +48,7 @@ COPY --from=intermediate /usr/src/web /usr/src/node-webshark/web
 RUN cd /usr/src/node-webshark/web \
  && sed -i -E 's/getBufferGate\(([A-Za-z0-9_$]+)\)\{/getBufferGate(\1){window.__wsLive\&\&window.__wsLive.svc(this);/' main.*.js \
  && sed -i -E 's/initData\(\)\{var ([A-Za-z0-9_$]+)=this;/initData(){var \1=this;window.__wsLive\&\&window.__wsLive.comp(this);/' main.*.js \
- && sed -i 's|<script src="runtime|<script src="live-update.js?v=3"></script><script src="runtime|' index.html
+ && sed -i 's|<script src="runtime|<script src="live-update.js?v=10"></script><script src="runtime|' index.html
 
 VOLUME /captures
 
