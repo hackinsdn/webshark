@@ -224,6 +224,25 @@
       }]);
     } catch (e) { /* ignore */ }
     try { comp.cdr.detectChanges(); } catch (e) { /* ignore */ }
+    // follow the tail: scroll the packet list down to the newest frame
+    // (after a tick, so the freshly appended rows are rendered first)
+    setTimeout(scrollToNewestFrame, 50);
     log(msg, '- total', comp.destDetailsTable.length);
+  }
+
+  function scrollToNewestFrame() {
+    try {
+      var rows = document.querySelectorAll('tr.mat-mdc-row, tr[mat-row], mat-row');
+      if (!rows.length) { return; }
+      // nearest scrollable ancestor of the packet table
+      var node = rows[rows.length - 1].parentElement;
+      while (node && node !== document.body) {
+        if (node.scrollHeight > node.clientHeight + 10) {
+          node.scrollTop = node.scrollHeight;
+          return;
+        }
+        node = node.parentElement;
+      }
+    } catch (e) { /* ignore */ }
   }
 })();
